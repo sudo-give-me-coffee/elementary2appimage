@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+
+if [ -z "$1" ] ;then
+  echo "No package supplied"
+  exit 1
+fi
+
+################################################
+#                                              #
+#  "Translate" the app name                    #
+#                                              #
+################################################
+ 
+package_name="$1"
+app_name=$(echo "$package_name" | sed 's/\./ /g' | awk '{print $4}')
+git_url=$(echo "$package_name" | sed 's/\./ /g' | awk '{print "https://"$2"."$1"/"$3"/"$4".git"}')
+
+################################################
+#                                              #
+#  Create the app build structureke app        #
+#  build structure                             #
+#                                              #
+################################################
+
+mkdir $package_name 2> /dev/null
+cd $package_name
+APPDIR="$(pwd)/$app_name.AppDir/usr"
+mkdir -p "$APPDIR/share/glib-2.0/schemas" 2> /dev/null
+mkdir build 2> /dev/null
+
+################################################
+#                                              #
+#  Download app source code                    #
+#                                              #
+################################################
+
+if [ ! -d ".git" ]; then
+  git clone $git_url . || exit 2
+fi
+
+################################################
+#                                              #
+#  Extract GLib Schema                         #
+#                                              #
+################################################
+
+cp data/$package_name.gschema.xml $app_name.AppDir/usr/share/glib-2.0/schemas/ 2> /dev/null
+
+################################################
+#                                              #
+#  Check if App use meson build system         #
+#                                              #
+################################################
+
+if [ -f "meson.build" ] ; then                                    #
+  sed -i "s/ '\/etc/ 'etc/g" data/meson.build                     #  We don't want files on / to avoid
+  meson build --prefix="$APPDIR"                                  #  permission errors
+  cd build                                                        #
+  ninja install
+fi
+
+################################################
+#                                              #
+#   Check if App use cmake build system        #
+#                                              #
+################################################
+
+if [ -f "CMakeLists.txt" ] ; then                                 #
+  sed -i "s/ \/etc/ $app_name.AppDir\/etc/g" data/CMakeLists.txt  #  We don't want files on / to avoid
+  cd build                                                        #  permission errors
+  cmake .. -DCMAKE_INSTALL_PREFIX:PATH="$APPDIR"                  #
+  make 
+  make install --ignore-errors --keep-going
+fi
+
+cd ..
+
+################################################
+#                                              #
+#   Create the AppRun file                     #
+#                                              #
+################################################
+
+cat > "$app_name.AppDir/AppRun" <<\EOF
+#!/usr/bin/env bash
+
+HERE="$(dirname "$(readlink -f "${0}")")"
+EXEC=$(grep -e '^Exec=.*' "${HERE}"/*.desktop | head -n 1 | cut -d "=" -f 2- | sed -e 's|%.||g')
+export PATH="${HERE}"/usr/bin/:"${HERE}"/usr/sbin/:"${HERE}"/usr/games/:"${HERE}"/bin/:"${HERE}"/sbin/:"${PATH}"
+
+mkdir "$XDG_CONFIG_HOME/elementaryOS-gschemas/" 2> /dev/null
+
+cp "${HERE}/usr/share/glib-2.0/schemas/${EXEC}.gschema.xml" "$XDG_CONFIG_HOME/elementaryOS-gschemas/"
+
+glib-compile-schemas "$XDG_CONFIG_HOME/elementaryOS-gschemas/"
+export GSETTINGS_SCHEMA_DIR="$XDG_CONFIG_HOME/elementaryOS-gschemas/"
+
+
+exec ${EXEC} "$@"
+
+EOF
+
+chmod +x "$app_name.AppDir/AppRun"
+
+################################################
+#                                              #
+#   Some apps create files on /etc but the     #
+#   build system can't put automatically on    #
+#   root of AppDir                             #
+#                                              #
+################################################
+
+mv "$APPDIR/etc" "$(pwd)/$app_name.AppDir" 2> /dev/null
+
+
+################################################
+#                                              #
+#   Extract .desktop file to root of AppDir    #
+#                                              #
+################################################
+
+cp "$APPDIR/share/applications/$package_name.desktop" "$app_name.AppDir/"
+
+

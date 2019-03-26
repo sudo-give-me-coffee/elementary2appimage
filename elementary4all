@@ -17,26 +17,28 @@ git_url=$(echo "$package_name" | sed 's/\./ /g' | awk '{print "https://"$2"."$1"
 
 ################################################
 #                                              #
-#  Create the app build structureke app        #
-#  build structure                             #
+#  Download app source code                    #
 #                                              #
 ################################################
 
 mkdir $package_name 2> /dev/null
 cd $package_name
-APPDIR="$(pwd)/$app_name.AppDir/usr"
-mkdir -p "$APPDIR/share/glib-2.0/schemas" 2> /dev/null
-mkdir build 2> /dev/null
-
-################################################
-#                                              #
-#  Download app source code                    #
-#                                              #
-################################################
 
 if [ ! -d ".git" ]; then
   git clone $git_url . || exit 2
 fi
+
+
+################################################
+#                                              #
+#  Create the app build structureke app        #
+#  build structure                             #
+#                                              #
+################################################
+
+APPDIR="$(pwd)/$app_name.AppDir/usr"
+mkdir -p "$APPDIR/share/glib-2.0/schemas" 2> /dev/null
+mkdir build 2> /dev/null
 
 ################################################
 #                                              #

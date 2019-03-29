@@ -25,8 +25,14 @@ GitHub repo: https://github.com/hannesschulze/optimizer
 With `elementary4all` you can do:
 
 ```
-./elementary4all com.github.hannesschulze.optimizer
+./elementary4all <project name>
 ```
+
+> Example:
+
+>```
+>./elementary4all com.github.donadigo.appeditor
+>```
 And all above will be done automatically
 
 <hr>
@@ -47,12 +53,11 @@ Except `git` all dependendencies is for application build (note that this doesn'
 * libwnck-3.0
 * libunity
 
-On `apt` based system this command install all dependencies:
+You can install by running in the `elementary4all` folder:
 
 ```
 
-sudo apt install build-essential desktop-file-utils gettext gobject-introspection libgee-0.8-dev libgirepository1.0-dev
-libglib2.0-dev libgranite-dev libgtk-3-dev libunity-dev libxml2-dev libxml2-utils meson valac valadoc git cmake libunity-dev libwnck-3-dev
+./elementary4all --configure
 
 ```
 
@@ -65,7 +70,22 @@ As elementary4all is a working-in-progress tool the "dist" version of compiled a
  com.github.<developer name>.<app name>/<app name>.AppDir
 ```
 
-You can run the application by double clicking on AppRun file
+You can run with:
+
+```
+
+./elementary4all --run <project name>
+
+```
+For example:
+
+```
+
+./elementary4all --run com.github.donadigo.appeditor
+
+```
+
+Alternatively, you can run the application by double clicking on AppRun file
 
 
 <hr>
@@ -77,7 +97,7 @@ The objective of this this tools is be the most seamless possible so are a varie
 - [x] Download automatically app source code
 - [x] Determine build mechanism and compile the app automatically
 - [ ] Install build dependendencies automatically
-- [ ] Configure the basic build environment on first run
+- [x] Configure the basic build environment
 - [ ] Fetch app runtime libs and copy to AppDir
 - [ ] Create an AppImage
 - [ ] Integrate the AppImage on system after build automatically
